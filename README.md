@@ -1,4 +1,4 @@
-# Keep in mind this is a very early relase of the project
+# Keep in mind this is a very early release of the project
 
 # Frontend
 
