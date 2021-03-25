@@ -167,7 +167,7 @@ def deleteProject(id):
     return response
 @app.route("/project/GetStates/<procesName>", methods=["GET"])
 def getStatesOfProject(procesName):
-    #os.system("top -b -n 1 > ../../data/top.txt") #unncommeht when ported to linux base server
+    os.system("./sysinfo.sh") #unncommeht when ported to linux base server
     with open("../../data/top.txt", 'r') as read_obj:
         for line in read_obj:
             print(line)
@@ -177,15 +177,6 @@ def getStatesOfProject(procesName):
                 response["pid"] = line[0]
                 response["user"] = line[1]
                 response["pr"] = line[2]
-                response["ni"] = line[3]
-                response["virt"] = line[4]
-                response["res"] = line[5]
-                response["shr"] = line[6]
-                response["s"] = line[7]
-                response["cpu%"] = line[8]
-                response["ram%"] = line[9]
-                response["time"] = line[10]
-                response["proccesName"] = line[11]
                 return {"response": response }
                 
     return {"response": False }
