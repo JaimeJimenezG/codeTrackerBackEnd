@@ -165,21 +165,20 @@ def deleteProject(id):
     mongo.db.project.delete_one({"_id": objectid.ObjectId(id)})
     response = jsonify({"response": "Project"+ id +"was deleated successfully."})
     return response
-@app.route("/project/GetStates/<procesName>", methods=["GET"])
-def getStatesOfProject(procesName):
+@app.route("/project/GetStates/", methods=["GET"])
+def getStatesOfProject():
     os.system("./sysinfo.sh") #unncommeht when ported to linux base server
-    with open("../../data/top.txt", 'r') as read_obj:
+    with open("../data/top.txt", 'r') as read_obj:         
+        response = {}
         for line in read_obj:
-            print(line)
-            if procesName in line:
-                response = {}
-                line = line.split();
-                response["pid"] = line[0]
-                response["user"] = line[1]
-                response["pr"] = line[2]
-                return {"response": response }
-                
-    return {"response": False }
+            line = line.replace("/","")
+            line = line.split();
+            createObject = {}
+            createObject["process"] = line[0]
+            createObject["memoryUsage"] = line[1]
+            createObject["cpuUsage"] = line[2]
+            response[line[0]] = createObject
+    return {"response": response }
 
 
 
