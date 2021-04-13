@@ -1,14 +1,13 @@
-from flask import Flask, request, jsonify, Response, url_for, request, session, redirect, make_response
+from flask import Flask, request, jsonify, Response, request, session
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import json_util, objectid
 from flask_cors import CORS
-import uuid
 import jwt
 import datetime
-from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import os
+import json
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"*": {"origins": "*"}})
@@ -17,7 +16,7 @@ app.config['SECRET_KEY']='248593782395729384327589320'
 app.config['MONGO_URI']="mongodb://localhost/codetracker"
 
 mongo = PyMongo(app)
-
+os.system("service code-server@jaime start") # woke up service code-server
 # Routes
 
 #Login
@@ -120,34 +119,54 @@ def notFound(error=None):
 @app.route("/projects", methods=["POST"])
 def createProject():
     name = request.json["name"]
-    languajes = request.json["languajes"]
     ownersId = request.json["ownersId"]
     path = request.json["path"]
-    ownersNames = request.json["ownersNames"]
     desc = request.json["desc"]
-    if name and languajes and ownersId and path and ownersNames and desc:
+    workspace = request.json["workspace"]
+    procesName = request.json["procesName"]
+    startCommand = request.json["startCommand"]
+    stopCommand = request.json["stopCommand"]
+    createWorkspace(path, workspace)
+    if name and ownersId and path and desc and workspace and procesName and startCommand and stopCommand:
         id = mongo.db.projects.insert(
             {  
                 "name": name,
-                "languajes": languajes,
                 "ownersId": ownersId,
                 "path": path,
-                "ownersNames": ownersNames,
-                "desc": desc
+                "desc": desc,
+                "procesName": procesName,
+                "workspace": workspace,
+                "startCommand": startCommand,
+                "stopCommand": stopCommand
             }
         )
         response = {
             "id": str(id),
             "name": name,
-            "languajes": languajes,
             "ownersId": ownersId,
             "path": path,
-            "ownersNames": ownersNames,
-            "desc": desc
+            "desc": desc,
+            "procesName": procesName,
+            "workspace": workspace,
+            "startCommand": startCommand,
+            "stopCommand": stopCommand
         }
         return response
     else:
         return notFound()
+def createWorkspace(path, workspaceName):
+    workspace = {
+        "folders": [
+            {
+                "path": path
+            }
+        ],
+        "remoteAuthority": "192.168.1.22:8080",
+	    "settings": {}
+    }
+    print(workspaceName)
+    with open('/home/jaime/.local/share/code-server/User/Workspaces/'+str(workspaceName)+'.code-workspace', 'w') as outfile:
+        json.dump(workspace, outfile)
 @app.route("/projects/<userId>", methods=["GET"])
 def getProjectsByUserId(userId):
     projects = mongo.db.projects.find({"ownersId": userId})
@@ -162,12 +181,12 @@ def getProject(id):
     return Response(response, mimetype="application/json")
 @app.route("/project/<id>", methods=["DELETE"])
 def deleteProject(id):
-    mongo.db.project.delete_one({"_id": objectid.ObjectId(id)})
-    response = jsonify({"response": "Project"+ id +"was deleated successfully."})
+    mongo.db.projects.delete_one({"_id": objectid.ObjectId(id)})
+    response = jsonify({"response": "Project"+ id +" was deleated successfully."})
     return response
 @app.route("/project/GetStates/", methods=["GET"])
 def getStatesOfProject():
-    os.system("./sysinfo.sh") #unncommeht when ported to linux base server
+    os.system("./sysinfo.sh")
     with open("../data/top.txt", 'r') as read_obj:         
         response = {}
         for line in read_obj:
@@ -179,10 +198,17 @@ def getStatesOfProject():
             createObject["cpuUsage"] = line[2]
             response[line[0]] = createObject
     return {"response": response }
-
-
-
-
+@app.route("/project/start", methods=["POST"])
+def procesStart():
+    print(request.json)
+    command = request.json['command']
+    os.system(command)
+    return { " response": "started" }
+@app.route("/project/stop", methods=["POST"])
+def procesStop():
+    command = request.json['command']
+    os.system(command)
+    return { " response": "stopped" }
 #Token
 def token_required(f):
    @wraps(f)
@@ -204,7 +230,7 @@ def token_required(f):
          return jsonify({'message': 'token is invalid'})
    return decorator
 
-app.run(host="127.0.0.1", debug=True)
+app.run(host="192.168.1.22", debug=True)
 
 #Lenguajes
 

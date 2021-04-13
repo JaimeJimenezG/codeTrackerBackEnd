@@ -1,6 +1,5 @@
 #!/bin/sh
 (
-printf "%-20s %-8s %-8s\n" "COMMAND" "%MEM" "%CPU" > ../data/top.txt
 /bin/ps amcwwwxo "command %mem %cpu" | 
 /usr/bin/awk -F" " '
 BEGIN { 
@@ -27,6 +26,6 @@ END {
     }
   }
 }
-' >> ../data/top.txt | 
+' > ../data/top.txt | 
 /usr/bin/sort -rn -t '/' -k 2,2 | /usr/bin/tr -d '/' | /usr/bin/head -n 15
 )
